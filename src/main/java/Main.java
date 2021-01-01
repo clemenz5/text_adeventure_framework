@@ -5,8 +5,7 @@ import com.googlecode.lanterna.screen.Screen;
 import com.googlecode.lanterna.screen.TerminalScreen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.Terminal;
-import com.googlecode.lanterna.terminal.swing.SwingTerminal;
-import com.googlecode.lanterna.terminal.swing.SwingTerminalFrame;
+import com.googlecode.lanterna.terminal.TerminalResizeListener;
 
 import java.util.Random;
 
@@ -15,40 +14,42 @@ public class Main {
     public static void main(String[] args) {
         DefaultTerminalFactory factory = new DefaultTerminalFactory();
 
-        try{
-            new SwingTerminal().
-            Terminal terminal = factory.createTerminalEmulator();
+        try {
+            Terminal terminal = factory.createTerminal();
             Screen screen = new TerminalScreen(terminal);
+
 
             screen.startScreen();
             screen.setCursorPosition(null);
 
-            terminal.setForegroundColor(TextColor.ANSI.RED);
-            terminal.setBackgroundColor(TextColor.ANSI.BLUE);
-
-            terminal.putCharacter('d');
-            terminal.setForegroundColor(TextColor.ANSI.DEFAULT);
-            terminal.setBackgroundColor(TextColor.ANSI.DEFAULT);
-            terminal.flush();
-
-
-
             Random random = new Random();
-            TerminalSize terminalSize = screen.getTerminalSize();
-            for(int column = 0; column < terminalSize.getColumns(); column++) {
-                for(int row = 0; row < terminalSize.getRows(); row++) {
-                    screen.setCharacter(column, row, new TextCharacter(
-                            '#',
-                            TextColor.ANSI.BLUE,
-                            // This will pick a random background color
-                            TextColor.ANSI.values()[random.nextInt(TextColor.ANSI.values().length)]));
+
+            terminal.addResizeListener(new TerminalResizeListener() {
+                @Override
+                public void onResized(Terminal terminal, TerminalSize terminalSize) {
+                    System.out.println(terminalSize);
+                    System.out.println(terminalSize.getColumns());
+                    System.out.println(terminalSize.getRows());
+                    for (int column = 0; column < terminalSize.getColumns(); column++) {
+                        for (int row = 0; row < terminalSize.getRows(); row++) {
+                            TextGraphics textGraphics = screen.newTextGraphics();
+
+                            textGraphics.setForegroundColor(TextColor.ANSI.BLUE);
+                            textGraphics.setBackgroundColor(TextColor.ANSI.values()[random.nextInt(TextColor.ANSI.values().length)]);
+                            textGraphics.putString(column, row, "!");
+                        }
+                    }
+                    try {
+                        screen.refresh();
+                    } catch (Exception e) {
+                        System.out.println(e);
+                    }
                 }
-            }
-            terminal.flush();
-            screen.refresh();
+            });
 
-        }catch (Exception e){
 
+        } catch (Exception e) {
+            System.out.println(e);
         }
     }
 }
